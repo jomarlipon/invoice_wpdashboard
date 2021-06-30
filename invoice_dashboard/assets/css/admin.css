@@ -40,3 +40,34 @@
 .content-wrapinv h1 {
     font-weight: 600;
 }
+
+.filter-wrap {
+    margin-top: 20px;
+}
+
+.nav-tabs {
+    border-bottom: none;
+}
+
+.status-filter li.nav-item:first-child {
+    padding-left: 0px;
+}
+
+.status-filter li.nav-item {
+    font-size: 13px;
+    text-transform: uppercase;
+    padding: 10px;
+}
+
+.status-filter li.nav-item a {
+    color: #6e7681;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.status-filter li.nav-item a.active {
+    background: #6e7681;
+    color: #fff;
+    padding: 5px 8px;
+    border-radius: 5px;
+}
