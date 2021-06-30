@@ -1,0 +1,42 @@
+.inv-dashadmin header {
+    background: #000;
+    color: #fff;
+    padding: 5px 20px;
+    border-top-left-radius: 5px;
+    border-top-right-radius: 5px;
+}
+
+.header-wrap {
+    display: flex;
+    width: 100%;
+}
+
+.siteadmin_logo {
+    width: 5%;
+}
+
+.siteadmin_menu {
+    width: 90%;
+}
+
+.siteadmin_menu .invmenu_item {
+    margin: 0px 10px;
+}
+
+.siteadmin_menu .invmenu_item a {
+    color: #fff;
+    text-decoration: none;
+}
+
+.siteadmin_profile {
+    width: 5%;
+}
+
+.content-wrapinv {
+    background: #f7f8fa;
+    padding: 75px 0px;
+}
+
+.content-wrapinv h1 {
+    font-weight: 600;
+}
