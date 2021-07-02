@@ -267,12 +267,21 @@ function load_scripts ()
 // function to enque the bootstrap or custom css
 function enqueue_bootstrap()
 {
+    // css
     $bootstrapadmin = plugins_url( 'invoice_dashboard/assets/css/bootstrap.min.css' ); //use your path of course
     $dependencies = array(); //add any depencdencies in array
-    $version = false; //or use a version int or string
     $admincss = plugins_url( 'invoice_dashboard/assets/css/admin.css' ); //use your path of course
-    wp_enqueue_style( 'admin-inv-bootstrap', $bootstrapadmin, $dependencies, $version );
+    wp_enqueue_style( 'admin-inv-bootstrap', $bootstrapadmin, $dependencies );
     wp_enqueue_style( 'admin-inv-css', $admincss);
+    wp_enqueue_style( 'poppins_gfont', 'https://fonts.googleapis.com/css2?family=Poppins:wght@200;300;400&display=swap');
+
+    //js
+    $bootstrapadminjs = plugins_url( 'invoice_dashboard/assets/js/bootstrap.min.js' ); //use your path of course
+    $invadminjs = plugins_url( 'invoice_dashboard/assets/js/inv-admin.js' ); //use your path of course
+    wp_enqueue_script( 'admin-jquery-inv', 'https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js');
+    wp_enqueue_script( 'admin-inv-bootstrap', $bootstrapadminjs);
+    wp_enqueue_script( 'admin-inv-admin', $invadminjs);
+    wp_localize_script( 'admin-inv-admin', 'invdash_ajax', array( 'ajax_url' => admin_url( 'admin-ajax.php' ) ) );
 }
 
 // shortcode to display the dashboard on front-end on shop-manager dashboard
@@ -283,4 +292,28 @@ function inv_usershop_dashboard_func() {
     return $inv;
 
 }
-add_shortcode('inv_usershop_dashboard', 'inv_usershop_dashboard_func'); 
+add_shortcode('inv_usershop_dashboard', 'inv_usershop_dashboard_func');
+
+//ajax filter status
+function inv_status_get() {
+
+    $html = '';
+    $html .= '<tr class="inv-item">';
+        $html .= '<td><input type="checkbox" class="inv-select"></td>';
+        $html .= '<td>#2023</td>';
+        $html .= '<td><span class="inv-restaurant">Restaurant Name 1</span></td>';
+        $html .= '<td><span class="inv-status verified">Verified</span></td>';
+        $html .= '<td><span class="inv-start">21/02/2021</span></td>';
+        $html .= '<td><span class="inv-end">26/02/2021</span></td>';
+        $html .= '<td><span class="inv-total">$20.00</td>';
+        $html .= '<td><span class="inv-fee">$10.00</span></td>';
+        $html .= '<td><span class="inv-transfer">$30.00</span></td>';
+        $html .= '<td><span class="inv-orders">20</span></td>';
+        $html .= '<td><img class="downloadinvoice" src="'. plugins_url().'/invoice_dashboard/assets/images/download-cloud.svg" alt="download invoice"></td>';
+    $html .= '</tr>';
+
+    echo $html;
+    wp_die();
+}
+add_action("wp_ajax_get_invdash", "inv_status_get");
+add_action("wp_ajax_nopriv_get_invdash", "inv_status_get");
