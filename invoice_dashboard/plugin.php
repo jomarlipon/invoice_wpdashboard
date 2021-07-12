@@ -165,7 +165,7 @@ function inv_restaurantorder() {
       'has_archive'   => false,
       'capability_type' => 'post',
       'capabilities' => array(
-          'create_posts' => false, 
+          'create_posts' => true, 
           ),
       'map_meta_cap' => true,
     );
@@ -175,7 +175,7 @@ function inv_restaurantorder() {
         'name'               => __( 'Order', 'inv-dashboard' ),
         'singular_name'      => __( 'Order', 'inv-dashboard' ),
         'add_new'            => __( 'Add Order', 'inv-dashboard' ),
-        'add_new_item'       => __( 'Add New Order','inv-dashboard' ),
+        'add_new_item'       => __( 'New Order','inv-dashboard' ),
         'new_item'           => __( 'New Order','inv-dashboard' ),
         'all_items'          => __( 'All Orders','inv-dashboard' ),
         'view_item'          => __( 'View Order','inv-dashboard' ),
@@ -193,12 +193,48 @@ function inv_restaurantorder() {
         'show_in_rest'  => true,
         'menu_position' => 6,
         'show_in_menu'  => 'edit.php?post_type=eat_order',
-        'supports'      => array('excerpt','custom-fields'),
+        'supports'      => array( 'custom-fields'),
         'has_archive'   => false,
         );
       register_post_type( 'eat_order', $oargs );
 }
 add_action( 'init', 'inv_restaurantorder' );
+
+
+// function to load the script in admin dashboard
+function load_scripts ()
+{
+  add_action( 'admin_enqueue_scripts', 'enqueue_bootstrap' );
+}
+
+// function to enque the bootstrap or custom css
+function enqueue_bootstrap()
+{
+    // css
+    $bootstrapadmin = plugins_url( 'invoice_dashboard/assets/css/bootstrap.min.css' ); //use your path of course
+    $dependencies = array(); //add any depencdencies in array
+    $admincss = plugins_url( 'invoice_dashboard/assets/css/admin.css' ); //use your path of course
+    wp_enqueue_style( 'admin-inv-bootstrap', $bootstrapadmin, $dependencies );
+    wp_enqueue_style( 'admin-inv-css', $admincss);
+    wp_enqueue_style( 'poppins_gfont', 'https://fonts.googleapis.com/css2?family=Poppins:wght@200;300;400&display=swap');
+    wp_enqueue_style( 'fontawsomecss', 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css');
+    
+    wp_enqueue_style( 'inv-datatablecss', 'https://cdn.datatables.net/1.10.25/css/dataTables.bootstrap5.min.css');
+    wp_enqueue_style( 'inv-selectDatatable', 'https://cdn.datatables.net/select/1.3.3/css/select.dataTables.min.css');
+
+    //js
+    $bootstrapadminjs = plugins_url( 'invoice_dashboard/assets/js/bootstrap.min.js' ); //use your path of course
+    $invadminjs = plugins_url( 'invoice_dashboard/assets/js/inv-admin.js' ); //use your path of course
+
+    wp_enqueue_script( 'admin-jquery-inv', 'https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js');
+    wp_enqueue_script( 'admin-invdatatables', 'https://cdn.datatables.net/v/dt/dt-1.10.20/datatables.min.js' );
+    wp_enqueue_script( 'admin-inv-bootstrap', $bootstrapadminjs);
+    wp_enqueue_script( 'admin-inv-admin', $invadminjs,array('admin-jquery-inv'));
+    wp_localize_script( 'admin-inv-admin', 'invdash_ajax', array( 'ajax_url' => admin_url( 'admin-ajax.php' ) ) );
+    wp_localize_script('admin-inv-admin', 'getPHPvariable', array(
+        'pluginsUrl' => plugin_dir_url(__FILE__),
+    ));
+}
 
 
 /* Register metabox for some details of invoice using custom field
@@ -219,7 +255,7 @@ function eat_invoicedetails( $posttype ) {
 *  @package custom post type Restaurant
 */
 function register_metaboxes_restaurant() {
-    add_meta_box( 'inv_restaurantdetails', __( 'Resturant Details', 'inv-dashboard' ), 'restaurant_details_func', 'eat_restaurant');
+    add_meta_box( 'inv_restaurantdetails', __( 'Restaurant Details', 'inv-dashboard' ), 'restaurant_details_func', 'eat_restaurant');
 }
 add_action( 'add_meta_boxes', 'register_metaboxes_restaurant' );
 
@@ -228,6 +264,49 @@ add_action( 'add_meta_boxes', 'register_metaboxes_restaurant' );
 function restaurant_details_func($posttype) {
     
 }
+
+/* Register metabox for some details of restaurant through custom field
+*  @package custom post type Order
+*/
+function register_metaboxes_order() {
+    add_meta_box( 'inv_orderdetails', __( 'Order Details', 'inv-dashboard' ), 'order_details_func', 'eat_order', 'normal', 'high');
+}
+add_action( 'add_meta_boxes', 'register_metaboxes_order' );
+
+
+//function display other eat_order details.
+function order_details_func($posttype) {
+
+    wp_nonce_field(basename(__FILE__), "meta-box-nonce");
+
+    echo '<div>';
+            echo '<label for="inv-box-ordernumber">Order Number</label>: ';
+            echo '<input name="inv-box-ordernumber" disabled type="text" placeholder="Generated Order No." value="'.get_the_title(). '">';
+    echo '</div>';
+    echo '<div class="resto-list">';
+        echo '<label for="inv-box-restolist">Restaurant: </label>';
+        $resto_selected = get_post_meta( $post->ID, 'resto_selected', true );
+        $restolist = get_posts( array(
+            'post_type'      => 'eat_restaurant',
+            'post_status'    => 'publish',
+            'posts_per_page' => -1
+        ) );
+        echo '<select id="resto_selected" name="resto_selected">';
+            echo '<option value="">Select Restaurant: </option>';
+            foreach ( $restolist as $rList ) :
+                echo '<option value="'.esc_attr($rList->post_title).'" '.selected($resto_selected, esc_attr($rList->post_title)).' >'.esc_html($rList->post_title).'</option>';
+            endforeach;
+
+        echo '</select>';
+    echo '</div>';
+    
+}
+
+add_action( 'save_post', 'save_order_metafield', 10, 2 );
+function save_order_metafield() {
+    
+}
+
 
 /* Custom Admin Menu
 * Add Plugin Menu
@@ -247,9 +326,10 @@ function invoice_dashboard_menupage() {
     );
     add_action( 'load-'.$invpage, 'load_scripts' ); // load a custom css (bootstrap and other) if admin Invoice Admin Dashboard is being displayed.
 
+    add_submenu_page('inv-admin-dashboard', 'Invoice', 'Invoice', 'manage_options','edit.php?post_type=eat_invoice');
     add_submenu_page('inv-admin-dashboard', 'Order', 'Order', 'manage_options','edit.php?post_type=eat_order');
     add_submenu_page('inv-admin-dashboard', 'Restaurant', 'Restaurant', 'manage_options','edit.php?post_type=eat_restaurant');
-    add_submenu_page('inv-admin-dashboard', 'Invoice', 'Invoice', 'manage_options','edit.php?post_type=eat_invoice');
+    
 }
 add_action('admin_menu', 'invoice_dashboard_menupage');
 
@@ -258,31 +338,6 @@ function inv_admin_page_content() {
     include plugin_dir_path( __FILE__ ) . 'inc/inv_dashboard_page.php';
 }
 
-// function to load the script in admin dashboard
-function load_scripts ()
-{
-  add_action( 'admin_enqueue_scripts', 'enqueue_bootstrap' );
-}
-
-// function to enque the bootstrap or custom css
-function enqueue_bootstrap()
-{
-    // css
-    $bootstrapadmin = plugins_url( 'invoice_dashboard/assets/css/bootstrap.min.css' ); //use your path of course
-    $dependencies = array(); //add any depencdencies in array
-    $admincss = plugins_url( 'invoice_dashboard/assets/css/admin.css' ); //use your path of course
-    wp_enqueue_style( 'admin-inv-bootstrap', $bootstrapadmin, $dependencies );
-    wp_enqueue_style( 'admin-inv-css', $admincss);
-    wp_enqueue_style( 'poppins_gfont', 'https://fonts.googleapis.com/css2?family=Poppins:wght@200;300;400&display=swap');
-
-    //js
-    $bootstrapadminjs = plugins_url( 'invoice_dashboard/assets/js/bootstrap.min.js' ); //use your path of course
-    $invadminjs = plugins_url( 'invoice_dashboard/assets/js/inv-admin.js' ); //use your path of course
-    wp_enqueue_script( 'admin-jquery-inv', 'https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js');
-    wp_enqueue_script( 'admin-inv-bootstrap', $bootstrapadminjs);
-    wp_enqueue_script( 'admin-inv-admin', $invadminjs);
-    wp_localize_script( 'admin-inv-admin', 'invdash_ajax', array( 'ajax_url' => admin_url( 'admin-ajax.php' ) ) );
-}
 
 // shortcode to display the dashboard on front-end on shop-manager dashboard
 function inv_usershop_dashboard_func() {
@@ -297,23 +352,83 @@ add_shortcode('inv_usershop_dashboard', 'inv_usershop_dashboard_func');
 //ajax filter status
 function inv_status_get() {
 
-    $html = '';
-    $html .= '<tr class="inv-item">';
-        $html .= '<td><input type="checkbox" class="inv-select"></td>';
-        $html .= '<td>#2023</td>';
-        $html .= '<td><span class="inv-restaurant">Restaurant Name 1</span></td>';
-        $html .= '<td><span class="inv-status verified">Verified</span></td>';
-        $html .= '<td><span class="inv-start">21/02/2021</span></td>';
-        $html .= '<td><span class="inv-end">26/02/2021</span></td>';
-        $html .= '<td><span class="inv-total">$20.00</td>';
-        $html .= '<td><span class="inv-fee">$10.00</span></td>';
-        $html .= '<td><span class="inv-transfer">$30.00</span></td>';
-        $html .= '<td><span class="inv-orders">20</span></td>';
-        $html .= '<td><img class="downloadinvoice" src="'. plugins_url().'/invoice_dashboard/assets/images/download-cloud.svg" alt="download invoice"></td>';
-    $html .= '</tr>';
+    // $html = '';
+    // $html .= '<tr class="inv-item">';
+    //     $html .= '<td><input type="checkbox" class="inv-select"></td>';
+    //     $html .= '<td>#2023</td>';
+    //     $html .= '<td><span class="inv-restaurant">Restaurant Name 1</span></td>';
+    //     $html .= '<td><span class="inv-status verified">Verified</span></td>';
+    //     $html .= '<td><span class="inv-start">21/02/2021</span></td>';
+    //     $html .= '<td><span class="inv-end">26/02/2021</span></td>';
+    //     $html .= '<td><span class="inv-total">$20.00</td>';
+    //     $html .= '<td><span class="inv-fee">$10.00</span></td>';
+    //     $html .= '<td><span class="inv-transfer">$30.00</span></td>';
+    //     $html .= '<td><span class="inv-orders">20</span></td>';
+    //     $html .= '<td><img class="downloadinvoice" src="'. plugins_url().'/invoice_dashboard/assets/images/download-cloud.svg" alt="download invoice"></td>';
+    // $html .= '</tr>';
+    $data = array();
+    $datas = array();
+    if($_GET['status'] === 'all') {
+    $data['invoiceid'] = '#233244';
+    $data['restaurant'] = 'Restaurant';
+    $data['invoicestatus'] = 'verifed';
+    $data['invstartdate'] = '2021/20/04';
+    $data['invenddate'] = '2021/22/04';
+    $data['invtotal'] = '343';
+    $data['invfee'] = '23';
+    $data['invtransfer'] = '343';
+    $data['invorders'] = '32';
+    $datas[]= $data;
+    } else {
+        $data['invoiceid'] = '#233244';
+        $data['restaurant'] = 'Restaurant B';
+        $data['invoicestatus'] = $_GET['status'];
+        $data['invstartdate'] = '2021/20/04';
+        $data['invenddate'] = '2021/22/04';
+        $data['invtotal'] = '343';
+        $data['invfee'] = '23';
+        $data['invtransfer'] = '343';
+        $data['invorders'] = '32';
+        $datas[0]= $data;
+        $data['invoiceid'] = '#658504';
+        $data['restaurant'] = 'Restaurant C';
+        $data['invoicestatus'] = $_GET['status'];
+        $data['invstartdate'] = '2021/20/04';
+        $data['invenddate'] = '2021/22/04';
+        $data['invtotal'] = '687';
+        $data['invfee'] = '23';
+        $data['invtransfer'] = '343';
+        $data['invorders'] = '32';
+       $datas[1]= $data;
+    }
+    
+   
 
-    echo $html;
+    echo json_encode(array('data' => $datas));
     wp_die();
 }
 add_action("wp_ajax_get_invdash", "inv_status_get");
 add_action("wp_ajax_nopriv_get_invdash", "inv_status_get");
+
+
+add_filter( 'wp_insert_post_data' , 'modify_post_title' , '99', 1 ); // Grabs the inserted post data so you can modify it.
+
+function modify_post_title( $data )
+{
+ 
+  $countOrder = wp_count_posts('eat_order')->publish;
+ 
+
+  if( $data['post_type'] == 'eat_order') { 
+
+    if($countOrder == 0) {
+        $neworderID = 1;
+    } else {
+        $neworderID = ++$countOrder;
+    }
+    $title = '#INV-000'.$neworderID;
+    $data['post_title'] =  $title; //Updates the post title to your new title.
+
+  }
+  return $data; // Returns the modified data.
+}
