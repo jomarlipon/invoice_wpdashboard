@@ -27,6 +27,7 @@
         <div class="container">
             <div class="row">
                 <?php 
+                
                     $pageTab = $_GET['subpage'];
                     if($pageTab == 'invoices') {
                         include 'inv_invoice_page.php';
@@ -34,7 +35,7 @@
                     else {
                         include 'inv_sub_page.php';
                     }
-                
+
                 ?>
             </div>
         </div>

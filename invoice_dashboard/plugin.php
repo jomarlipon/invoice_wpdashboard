@@ -204,12 +204,14 @@ add_action( 'init', 'inv_restaurantorder' );
 // function to load the script in admin dashboard
 function load_scripts ()
 {
-  add_action( 'admin_enqueue_scripts', 'enqueue_bootstrap' );
+  add_action( 'admin_enqueue_scripts', 'enqueue_adminscripts_style',10,1 );
 }
 
 // function to enque the bootstrap or custom css
-function enqueue_bootstrap()
+function enqueue_adminscripts_style($hook)
 {
+    global $post, $post_type;
+
     // css
     $bootstrapadmin = plugins_url( 'invoice_dashboard/assets/css/bootstrap.min.css' ); //use your path of course
     $dependencies = array(); //add any depencdencies in array
@@ -225,6 +227,7 @@ function enqueue_bootstrap()
     //js
     $bootstrapadminjs = plugins_url( 'invoice_dashboard/assets/js/bootstrap.min.js' ); //use your path of course
     $invadminjs = plugins_url( 'invoice_dashboard/assets/js/inv-admin.js' ); //use your path of course
+    $jqueryui = plugins_url( 'invoice_dashboard/assets/js/jquery-ui.js' );
 
     wp_enqueue_script( 'admin-jquery-inv', 'https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js');
     wp_enqueue_script( 'admin-invdatatables', 'https://cdn.datatables.net/v/dt/dt-1.10.20/datatables.min.js' );
@@ -234,7 +237,18 @@ function enqueue_bootstrap()
     wp_localize_script('admin-inv-admin', 'getPHPvariable', array(
         'pluginsUrl' => plugin_dir_url(__FILE__),
     ));
+
+    $eatorder_js = plugins_url( 'invoice_dashboard/assets/js/jquery-ui.js' );
+
+    if($hook == 'post-new.php' || $hook == 'post.php') {
+        if($post->post_type == 'eat_order') {
+            wp_enqueue_script(  'jqueryui_eatorder', $jqueryui );
+            wp_enqueue_script(  'eatorder_js',$eatorder_js );
+        }
+    }
 }
+
+
 
 
 /* Register metabox for some details of invoice using custom field
@@ -262,6 +276,16 @@ add_action( 'add_meta_boxes', 'register_metaboxes_restaurant' );
 
 //function display other restaurant details.
 function restaurant_details_func($posttype) {
+
+    global $post;
+
+    echo '<div>';
+
+        echo '<label for="resto_transacfee">Transaction Fee<span class="resto-subdesc">(per transaction in percent)<span></label>';
+        echo '<input type="text" class="transact_fee" name="resto_fee">';
+
+
+    echo '</div>';
     
 }
 
@@ -276,8 +300,9 @@ add_action( 'add_meta_boxes', 'register_metaboxes_order' );
 
 //function display other eat_order details.
 function order_details_func($posttype) {
+    global $post;
 
-    wp_nonce_field(basename(__FILE__), "meta-box-nonce");
+    wp_nonce_field(basename(__FILE__), "ordermeta-box-nonce");
 
     echo '<div>';
             echo '<label for="inv-box-ordernumber">Order Number</label>: ';
@@ -294,17 +319,37 @@ function order_details_func($posttype) {
         echo '<select id="resto_selected" name="resto_selected">';
             echo '<option value="">Select Restaurant: </option>';
             foreach ( $restolist as $rList ) :
-                echo '<option value="'.esc_attr($rList->post_title).'" '.selected($resto_selected, esc_attr($rList->post_title)).' >'.esc_html($rList->post_title).'</option>';
+                echo '<option value="'.esc_attr($rList->ID).'" '.selected( $resto_selected, esc_attr($rList->ID) ).' >'.esc_html($rList->post_title).'</option>';
             endforeach;
-
         echo '</select>';
     echo '</div>';
-    
+
+    $order_startdate = get_post_meta( $post->ID, 'orderstart_date', true );
+    $orderend_date = get_post_meta( $post->ID, 'orderend_date', true );
+    echo '<div class="orderstart_date">';
+            echo '<label for="orderstart_date">Start Date: </label>';
+            echo '<input class="datepicker type="text" name="orderstart_date" value="'.$order_startdate.'">';
+    echo '</div>';
+    echo '<div class="orderend_date">';
+        echo '<label for="orderend_date">End Date: </label>';
+        echo '<input class="datepicker type="text" name="orderend_date" value="'.$orderend_date.'">';
+    echo '</div>';
 }
 
 add_action( 'save_post', 'save_order_metafield', 10, 2 );
 function save_order_metafield() {
-    
+
+    global $post;
+    if(isset($_POST['resto_selected'])) {
+        $restoselected= $_POST['resto_selected'];
+        $orderstart_date= $_POST['orderstart_date'];
+        $orderend_date= $_POST['orderend_date'];
+
+        update_post_meta($post->ID, 'resto_selected',$restoselected);
+        update_post_meta($post->ID, 'orderstart_date',$orderstart_date);
+        update_post_meta($post->ID, 'orderend_date',$orderend_date);
+    }
+
 }
 
 
@@ -415,19 +460,26 @@ add_filter( 'wp_insert_post_data' , 'modify_post_title' , '99', 1 ); // Grabs th
 
 function modify_post_title( $data )
 {
- 
+  
   $countOrder = wp_count_posts('eat_order')->publish;
- 
-
+  
   if( $data['post_type'] == 'eat_order') { 
 
     if($countOrder == 0) {
         $neworderID = 1;
+        $title = '#INV-000'.$neworderID;
     } else {
-        $neworderID = ++$countOrder;
+       
+        if($data->guid == NULL) {
+            $title = '#INV-000'.++$countOrder;
+        
+        } else {
+            $title = get_the_title();
+        }
     }
-    $title = '#INV-000'.$neworderID;
+       
     $data['post_title'] =  $title; //Updates the post title to your new title.
+    
 
   }
   return $data; // Returns the modified data.

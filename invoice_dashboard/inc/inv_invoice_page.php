@@ -6,7 +6,7 @@
     </div>
     <div class="filter-wrap">
         <div cass="container">
-            <div clss="row">
+            <div class="row">
                 <div class="col-lg-6 col-md-6">
                     <div class="status-filter">
                         <ul class="nav nav-tabs" id="myTab" role="tablist">
@@ -18,6 +18,15 @@
                     </div>
                 </div>
                 <div class="col-lg-6 col-md-6">
+                    <div class="date-search-paid float-end">
+                        <div class="class=date">Start Date and EndDate</div>
+                        <div class="searchbox input-prepend">
+                        
+                                <span class="spansearch"><i class="fa fa-search fa-lg"></i></span>
+                                <input type="text" id="searchInvoice" placeholder="Search">
+                        </div>
+                        <div class="markaspaid"><div class="button-markpaid">Mark as paid</div></div>
+                    </div>
                 </div>
             </div>
             <div class="row">
@@ -26,7 +35,7 @@
                         <img src="<?php echo plugins_url()?>/invoice_dashboard/assets/images/loading-image.svg" alt="Invoice Dashboard loading">
                     </div>
                     <div class="invoices-wrap">
-                        <table class="table">
+                        <table class="table" id="invtable">
                             <thead>
                                 <tr>
                                     <th scope="col"></th>
